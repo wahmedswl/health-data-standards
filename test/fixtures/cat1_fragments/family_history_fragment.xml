@@ -50,6 +50,40 @@
                 
                 </observation>
               </component>
+
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.46"/>
+                  <id root="1.3.6.1.4.1.115" extension="CDA_ID"/>
+                  <code code="55607006" displayName="Problem" 
+                        codeSystemName="SNOMED CT" 
+                        codeSystem="2.16.840.1.113883.6.96"/>
+                  <statusCode code="completed"/>
+                  <effectiveTime>
+                    <low value='20041016152724'/>
+                    <high value='20041016204832'/>
+                  </effectiveTime>
+                  <value xsi:type="CD" code="skippy" codeSystem="1.1.2"/>
+                  <entryRelationship typeCode="CAUS" >
+                    <observation classCode="OBS" moodCode="EVN">
+                       <templateId root="2.16.840.1.113883.10.20.22.4.47"/>
+                       <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4"/>
+                       <statusCode code="completed"/>
+                       <value xsi:type="CD" value="419099009" codeSystem="2.16.840.1.113883.6.96"/>
+                    </observation>
+                  </entryRelationship >
+
+                   <entryRelationship typeCode="SUBJ" inversionInd="true" >
+                    <observation classCode="OBS" moodCode="EVN">
+                       <templateId root="2.16.840.1.113883.10.20.22.4.31"/>
+                       <code code="445518008" codeSystem="2.16.840.1.113883.6.96"/>
+                       <statusCode code="completed"/>
+                       <value xsi:type="PQ" value="77" unit="years"/>
+                    </observation>
+                  </entryRelationship >
+
+                </observation>
+              </component>
             </organizer>
           </entry>
         </section>
