@@ -45,7 +45,7 @@ class Record
 
   Sections = [:allergies, :care_goals, :conditions, :encounters, :immunizations, :medical_equipment,
    :medications, :procedures, :results, :social_history, :vital_signs, :support, :advance_directives,
-   :insurance_providers, :functional_statuses]
+   :insurance_providers, :functional_statuses, :family_histories]
 
   embeds_many :provider_performances
   embeds_many :addresses, as: :locatable
