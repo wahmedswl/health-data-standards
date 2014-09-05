@@ -25,7 +25,7 @@ module HealthDataStandards
       field :oids, type: Array
 
       field :population_criteria, type: Hash
-      field :data_criteria, type: Array, default: []
+      # field :data_criteria, type: Array, default: []
       field :source_data_criteria, type: Hash, default: {}
       field :measure_period, type: Hash
       field :measure_attributes, type: Hash
@@ -51,6 +51,10 @@ module HealthDataStandards
 
       validates_presence_of :id
       validates_presence_of :name
+      
+      def data_criteria
+        self.hqmf_document['data_criteria'].map {|key, val| {key => val}}
+      end
 
       def self.categories(measure_properties = [])
         measure_properties = Array(measure_properties).map(&:to_s) | %w(
