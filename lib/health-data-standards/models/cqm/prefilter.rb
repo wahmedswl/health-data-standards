@@ -13,7 +13,19 @@ module HealthDataStandards
       # Comparison to a plain old value, like gender == 'F'
       field :desired_value
 
-      embedded_in :measure
+      field :negated, type: Boolean , default: false
+
+      embedded_in :filterable, polymorphic: true
+
+      def measure
+        if filterable
+          if filterable.kind_of? Measure 
+            filterable
+          else
+            filterable.measure 
+          end
+        end
+      end
 
       def build_query_hash(effective_time)
         filter_value = if self.effective_time_based
@@ -28,6 +40,63 @@ module HealthDataStandards
         else
           {self.record_field => {self.comparison => filter_value}}
         end
+      end
+    end
+
+
+    class AggregatePrefilter
+      include Mongoid::Document
+      field :prefilters, type: Array, default: []
+      field :conjuntion, type: String
+      embedded_in :filterable, polymorphic: true
+      embeds_many :prefilters,  as: :filterable
+
+      
+      def measure
+        if filterable
+          if filterable.kind_of? Measure 
+            filterable
+          else
+            filterable.measure 
+          end
+        end
+      end
+      
+      def build_query_hash(effective_time)
+        prefs = prefilters.compact.collect {|pf| pf.build_query_hash(effective_time)}
+        prefs.compact!
+        prefs.length ==0 ? nil : {"$#{conjuntion}" => prefs}
+      end
+    
+    end
+
+    class CodedPrefilter
+      include Mongoid::Document
+      field :record_field, type: String 
+      field :code_list_id, type: String
+      embedded_in :filterable, polymorphic: true
+      
+      def measure
+        if filterable
+          if filterable.kind_of? Measure 
+            filterable
+          else
+            filterable.measure 
+          end
+        end
+      end
+
+      def build_query_hash(effective_time)
+        possibles = []
+        vs_filter = {oid: code_list_id}
+        if measure && measure["bundle_id"]
+          vs_filter["bundle_id"] = measure["bundle_id"]
+        end
+        code_list_map = HealthDataStandards::SVS::ValueSet.where(vs_filter).first.code_set_map
+        code_list_map.each do |csm|
+         possibles <<  {"#{record_field}.codes.#{csm['set']}" => {"$in" => csm['values']}}
+        end
+        {"$or" => possibles}
       end
     end
   end

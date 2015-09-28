@@ -36,7 +36,7 @@ module HealthDataStandards
       field :continuous_variable, type: Boolean
       field :episode_of_care, type: Boolean
       field :aggregator, type: String
-      embeds_many :prefilters
+      embeds_many :prefilters, as: :filterable
 
       scope :top_level_by_type , ->(type){where({"type"=> type}).any_of({"sub_id" => nil}, {"sub_id" => "a"})}
       scope :top_level , ->{any_of({"sub_id" => nil}, {"sub_id" => "a"})}
@@ -54,70 +54,70 @@ module HealthDataStandards
 
       def self.categories(measure_properties = [])
         measure_properties = Array(measure_properties).map(&:to_s) | %w(
-          name description nqf_id cms_id hqmf_id continuous_variable episode_of_care
+        name description nqf_id cms_id hqmf_id continuous_variable episode_of_care
         )
         pipeline = []
 
         pipeline << {'$group' =>  measure_properties.inject({
-                                    '_id' => "$id",
-                                    'subs' => {'$push' => {"sub_id" => "$sub_id", "short_subtitle" => "$short_subtitle"}},
-                                    'sub_ids' => {'$push' => "$sub_id"},
-                                    'category' => {'$first' => "$category"}
-                                  }) do |h, prop|
-                                    h[prop] = {"$first" => "$#{prop}"}
-                                    h
-                                  end
-                    }
+          '_id' => "$id",
+          'subs' => {'$push' => {"sub_id" => "$sub_id", "short_subtitle" => "$short_subtitle"}},
+          'sub_ids' => {'$push' => "$sub_id"},
+          'category' => {'$first' => "$category"}
+        }) do |h, prop|
+          h[prop] = {"$first" => "$#{prop}"}
+          h
+        end
+      }
 
-        pipeline << {'$group' => {
-                      _id: "$category",
-                      measures: {
-                        '$push' =>  measure_properties.inject({
-                                      'id' => "$_id",
-                                      'hqmf_id' => "$_id",
-                                      'subs' => "$subs",
-                                      'sub_ids' => "$sub_ids"
-                                    }) do |h, prop|
-                                      h[prop] = "$#{prop}"
-                                      h
-                                    end
-                      }
-                    }}
+      pipeline << {'$group' => {
+        _id: "$category",
+        measures: {
+          '$push' =>  measure_properties.inject({
+            'id' => "$_id",
+            'hqmf_id' => "$_id",
+            'subs' => "$subs",
+            'sub_ids' => "$sub_ids"
+          }) do |h, prop|
+            h[prop] = "$#{prop}"
+            h
+          end
+        }
+      }}
 
-        pipeline << {'$project' => {'category' => '$_id', 'measures' => 1, '_id' => 0}}
+      pipeline << {'$project' => {'category' => '$_id', 'measures' => 1, '_id' => 0}}
 
-        pipeline << {'$sort' => {"category" => 1}}
-        Mongoid.default_session.command(aggregate: 'measures', pipeline: pipeline)['result']
-      end
-
-
-      # Returns the hqmf-parser's ruby implementation of an HQMF document.
-      # Rebuild from population_criteria, data_criteria, and measure_period JSON
-      def as_hqmf_model
-        @hqmf ||=  HQMF::Document.from_json(self.hqmf_document)
-      end
-
-      def key
-        "#{self['id']}#{sub_id}"
-      end
-
-      def is_cv?
-        ! population_ids[MSRPOPL].nil?
-      end
-
-      def self.installed
-        Measure.order_by([["id", :asc],["sub_id", :asc]]).to_a
-      end
+      pipeline << {'$sort' => {"category" => 1}}
+      Mongoid.default_session.command(aggregate: 'measures', pipeline: pipeline)['result']
+    end
 
 
-      # Finds all measures and groups the sub measures
-      # @return Array - This returns an Array of Hashes. Each Hash will represent a top level measure with an ID, name, and category.
-      #                 It will also have an array called subs containing hashes with an ID and name for each sub-measure.
-      def self.all_by_measure
-        reduce = 'function(obj,prev) {
-                    if (obj.sub_id != null)
-                      prev.subs.push({id : obj.id + obj.sub_id, name : obj.subtitle});
-                  }'
+    # Returns the hqmf-parser's ruby implementation of an HQMF document.
+    # Rebuild from population_criteria, data_criteria, and measure_period JSON
+    def as_hqmf_model
+      @hqmf ||=  HQMF::Document.from_json(self.hqmf_document)
+    end
+
+    def key
+      "#{self['id']}#{sub_id}"
+    end
+
+    def is_cv?
+      ! population_ids[MSRPOPL].nil?
+    end
+
+    def self.installed
+      Measure.order_by([["id", :asc],["sub_id", :asc]]).to_a
+    end
+
+
+    # Finds all measures and groups the sub measures
+    # @return Array - This returns an Array of Hashes. Each Hash will represent a top level measure with an ID, name, and category.
+    #                 It will also have an array called subs containing hashes with an ID and name for each sub-measure.
+    def self.all_by_measure
+      reduce = 'function(obj,prev) {
+        if (obj.sub_id != null)
+          prev.subs.push({id : obj.id + obj.sub_id, name : obj.subtitle});
+        }'
 
         self.moped_session.command( :group=> {:ns=>"measures", :key => {:id=>1, :name=>1, :category=>1}, :initial => {:subs => []}, "$reduce" => reduce})["retval"]
       end
@@ -181,41 +181,199 @@ module HealthDataStandards
       end
 
       def build_pre_filters!
-        dc = self.data_criteria.inject({}) do |all_dc, single_dc|
-          key = single_dc.keys.first
-          value = single_dc.values.first
-          all_dc[key] = value
-          all_dc
-        end
-        dc.each_pair do |criteria_name, data_criteria|
-          if data_criteria['definition'] == 'patient_characteristic_birthdate'
-            if data_criteria_in_population?(self.ipp_id, criteria_name)
-              prefilter = Prefilter.new(record_field: 'birthdate',
-                                        effective_time_based: true)
-              if data_criteria['temporal_references']
-                data_criteria['temporal_references'].each do |tr|
-                  if tr['type'] == 'SBS' && tr['reference'] == 'MeasurePeriod'
-                    years = nil
-                    if tr['range']['high']
-                      prefilter.comparison = '$gte'
-                      years = tr['range']['high']['value'].to_i
-                    elsif tr['range']['low']
-                      prefilter.comparison = '$lte'
-                      years = tr['range']['low']['value'].to_i
-                    end
+        filter = filter_ipp
+        self.prefilters << filter if filter
+      end
 
-                    prefilter.effective_time_offset = 1 + years
-                    self.prefilters << prefilter
-                  end
-                end
-              end
-            end
-          end
+      
+
+      def filter_ipp
+        population_criteria = hqmf_document["population_criteria"][ipp_id]
+        filter = AggregatePrefilter.new(conjuntion: "and")
+        population_criteria["preconditions"].each do |pc|
+          pre = handle_precondition(pc)
+          filter.prefilters <<  pre if pre
+        end
+        filter
+      end
+private
+      def handle_precondition(pre)
+        # is it a groupoing condtion
+        if pre["negation"]
+          return nil
+        elsif pre["reference"]
+          handle_data_criteria(pre["reference"])
+        elsif pre["conjunction_code"] == "allTrue"
+          filter_and_criteria(pre)
+        elsif pre["conjunction_code"] == "atLeastOneTrue"
+          filter_or_criteria(pre)
         end
       end
 
-      private
+      def handle_data_criteria(id)
+        crit = get_data_criteria(id)
+        if crit["type"] == "derived"
+          handle_grouping_critiera(crit)
+        elsif crit["type"] == "characteristic"
+          handel_patient_characteristic_dc(crit)
+        else
+          handle_single_criteria(crit)
+        end
+      end
 
+      def handel_patient_characteristic_dc(data_criteria)
+        if data_criteria['definition'] == 'patient_characteristic_birthdate'
+          filter = AggregatePrefilter.new(conjuntion:"and")
+          if data_criteria['temporal_references']
+            data_criteria['temporal_references'].each do |tr|
+              prefilter = Prefilter.new(record_field: 'birthdate',
+              effective_time_based: true)
+              if tr['type'] == 'SBS' && tr['reference'] == 'MeasurePeriod'
+                years = nil
+                if tr['range']['high']
+                  prefilter.comparison = '$gte'
+                  years = tr['range']['high']['value'].to_i
+                elsif tr['range']['low']
+                  prefilter.comparison = '$lte'
+                  years = tr['range']['low']['value'].to_i
+                end
+
+                prefilter.effective_time_offset = 1 + years
+                filter.prefilters << prefilter
+              end
+            end
+          end
+          return filter
+        elsif data_criteria['definition'] == 'patient_characteristic_gender'
+          return Prefilter.new(record_field: 'gender', comparison: "$eq", desired_value: data_criteria["value"]["code"])
+        end
+      end
+      def get_possible_locations(crit)
+        type = crit["type"]
+       ["allergies"].concat case type
+        when "results"
+          ["results","procedures","vital_signs"]
+        when "procedures"
+          ["procedures","medications","immunizations"]
+        when "interventions"
+          ["procedures","encounters","socialhistories"]  
+        when "physical_exams"
+           ["procedures","encounters","results"] 
+        when "laboratory_tests"
+          ["results","vital_signs"]
+        when "medications"
+          ["medications","immunizations"]
+        when "problems"
+          ["conditions", "socialhistories", "procedures"]
+        when "conditions"
+          ["conditions", "socialhistories", "procedures"]
+        when "devices"
+          ["medical_equipment","procedures","care_goals"]
+        when "diagnosis"
+          ["conditions","socialhistories",]
+        when "diagnostic_studies"
+          ["results","procedures","vital_signs"]
+        when "communications"
+          ["procedures","medications","immunizations"]
+        when "functional_statuses"
+          ["functional_statuses","procedures", "results"]
+        when "transfers"
+          ["encounters"]
+        when "risk_category_assessments"
+          ["procedures"]
+        when "symptoms"
+          ["conditions", "socialhistories", "procedures"]
+        when "substances"
+          ["medications", "immunizations"]  
+        else
+          [type]
+        end
+      end
+
+      def handle_single_criteria(crit)
+        locations = get_possible_locations(crit)
+        filter = AggregatePrefilter.new(conjuntion: "or")
+        locations.each do |loc|
+          filter.prefilters << CodedPrefilter.new(record_field: loc, code_list_id: crit["code_list_id"])
+        end
+        filter
+      end
+
+      def handle_satisfies_all(crit)
+        handle_data_criteria(crit["children_criteria"][0])
+      end
+
+      def handle_satisfies_any(crit)
+        handle_data_criteria(crit["children_criteria"][0])
+      end
+
+
+      def handle_union_criteria(crit)
+        filter = AggregatePrefilter.new( conjuntion: "or")
+        crit["children_criteria"].each do |ch|
+          pref = handle_data_criteria(ch)
+          if pref
+            filter.prefilters << pref
+          else
+            return nil
+          end
+        end
+        filter
+      end
+
+      def handle_intersection_critieria(crit)
+        filter = AggregatePrefilter.new(conjuntion: "and")
+        crit["children_criteria"].each do |ch|
+          pref = handle_precondition(ch)
+          if pref
+            filter.prefilters << pref
+          end
+        end
+        filter
+      end
+
+
+      def handle_grouping_critiera(crit)
+        if crit["definition"] == "satisfies_all"
+          handle_satisfies_all(crit)
+        elsif crit["definition"] == "satisfies_any"
+          handle_satisfies_any(crit)
+        elsif crit["derivation_operator"] == "UNION"
+          handle_union_criteria(crit)
+        elsif crit["derivation_operator"] == "INTERSECTION"
+          handle_intersection_critieria(crit)
+        end
+
+      end
+
+
+      def filter_or_criteria(precondition)
+        filter = AggregatePrefilter.new(conjuntion: "or")
+        precondition["preconditions"].each do |pre|
+          pref = handle_precondition(pre)
+          if pref
+            filter.prefilters << pref
+          else
+            return nil
+          end
+        end
+        filter
+      end
+
+      def filter_and_criteria(precondition)
+        filter = AggregatePrefilter.new(conjuntion: "and")
+        precondition["preconditions"].each do |pre|
+          pref = handle_precondition(pre)
+          if pref
+            filter.prefilters << pref
+          end
+        end
+        filter
+      end
+
+      def get_data_criteria(id)
+        hqmf_document["data_criteria"][id]
+      end
       def data_criteria_in_population?(population_id, criteria_name)
         criteria_in_precondition?(self.hqmf_document['population_criteria'][population_id]['preconditions'], criteria_name)
       end
