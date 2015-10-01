@@ -180,6 +180,14 @@ module HealthDataStandards
         pop_id
       end
 
+      def strat_id
+        strat_hqmf_id = self.population_ids['STRAT']
+        st_id, pop_criteria = hqmf_document['population_criteria'].find do |population_id, population_criteria|
+          population_criteria['hqmf_id'] == strat_hqmf_id
+        end
+        st_id
+      end      
+
       def build_pre_filters!
         filter = filter_ipp
         self.prefilters << filter if filter
@@ -193,6 +201,14 @@ module HealthDataStandards
         population_criteria["preconditions"].each do |pc|
           pre = handle_precondition(pc)
           filter.prefilters <<  pre if pre
+        end
+        filter
+        if strat_id 
+          population_criteria = hqmf_document["population_criteria"][strat_id]
+          population_criteria["preconditions"].each do |pc|
+            pre = handle_precondition(pc)
+            filter.prefilters <<  pre if pre
+          end
         end
         filter
       end
@@ -230,15 +246,18 @@ private
               effective_time_based: true)
               if tr['type'] == 'SBS' && tr['reference'] == 'MeasurePeriod'
                 years = nil
+                prefilter.effective_time_compare = "SBS"
                 if tr['range']['high']
                   prefilter.comparison = '$gte'
-                  years = tr['range']['high']['value'].to_i
+                  years = tr['range']['high']['value'].to_i + 1
+                  prefilter.effective_time_quantity = tr['range']['high']['unit']
                 elsif tr['range']['low']
                   prefilter.comparison = '$lte'
-                  years = tr['range']['low']['value'].to_i
+                  years = tr['range']['low']['value'].to_i - 1
+                  prefilter.effective_time_quantity = tr['range']['low']['unit']
                 end
 
-                prefilter.effective_time_offset = 1 + years
+                prefilter.effective_time_offset = years
                 filter.prefilters << prefilter
               end
             end
@@ -291,11 +310,28 @@ private
       end
 
       def handle_single_criteria(crit)
+        return nil if crit["code_list_id"].nil?
         locations = get_possible_locations(crit)
         filter = AggregatePrefilter.new(conjuntion: "or")
         locations.each do |loc|
           filter.prefilters << CodedPrefilter.new(record_field: loc, code_list_id: crit["code_list_id"])
         end
+        temp_filters = []
+        if crit["temporal_references"]
+          crit['temporal_references'].each do |tr|
+            if tr["reference"] != "MeasurePeriod"
+              f = handle_data_criteria(tr["reference"])
+              temp_filters << f if f 
+            end
+          end
+        end
+        if !temp_filters.empty?
+          orfilter = filter 
+          filter = AggregatePrefilter.new(conjuntion: "and")
+          filter.prefilters << orfilter
+          temp_filters.each  {|tf| filter.prefilters << tf}
+        end
+
         filter
       end
 

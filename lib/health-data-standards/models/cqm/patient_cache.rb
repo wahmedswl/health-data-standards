@@ -3,6 +3,7 @@ module HealthDataStandards
     class PatientCache
       include Mongoid::Document
       include Mongoid::Timestamps
+      include Mongoid::Attributes::Dynamic
       store_in collection: 'patient_cache'
       index "value.last" => 1
       index "bundle_id" => 1
@@ -43,7 +44,7 @@ module HealthDataStandards
     class PatientCacheValue
 
       include Mongoid::Document
-
+      include Mongoid::Attributes::Dynamic
       embedded_in :patient_cache, inverse_of: :value
 
       field :DENOM, type: Integer

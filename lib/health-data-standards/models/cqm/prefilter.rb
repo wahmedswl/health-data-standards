@@ -10,6 +10,8 @@ module HealthDataStandards
       field :effective_time_based, type: Boolean, default: false
       # If effective_time_based, what is the offset from effective_time in years
       field :effective_time_offset, type: Integer
+      field :effective_time_quantity, type: String, default: "a"
+      field :effective_time_compare , type: String, default: "SBS"
       # Comparison to a plain old value, like gender == 'F'
       field :desired_value
 
@@ -30,7 +32,24 @@ module HealthDataStandards
       def build_query_hash(effective_time)
         filter_value = if self.effective_time_based
           et = Time.at(effective_time)
-          et.years_ago(effective_time_offset).to_i
+          case effective_time_compare
+          when "SBS" 
+            et = et.years_ago(1)
+          end
+
+          case effective_time_quantity
+          when 'mo'
+            et.months_ago(effective_time_offset).to_i
+          when 'd' 
+            et.days_ago(effective_time_offset).to_i
+          when 'day' 
+            et.days_ago(effective_time_offset).to_i
+          when 'wk' 
+            et.weeks_ago(effective_time_offset).to_i
+          else
+            et.years_ago(effective_time_offset).to_i
+          end
+          
         else
           self.desired_value
         end
