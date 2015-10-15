@@ -5,7 +5,7 @@ module HealthDataStandards
       field :oid, type: String
       field :display_name, type: String
       field :version, type: String
-      field :user_id, type: String # Eventually we need to delete this from bundles when exporting
+      field :versioned_oid, type: String
 
       belongs_to :bundle, class_name: "HealthDataStandards::CQM::Bundle", inverse_of: :value_sets
 
@@ -42,7 +42,7 @@ module HealthDataStandards
           vs = ValueSet.new(oid: vs_element["ID"], display_name: vs_element["displayName"], version: vs_element["version"])
           concepts = vs_element.xpath("//vs:Concept").collect do |con|
             code_system_name = HealthDataStandards::Util::CodeSystemHelper::CODE_SYSTEMS[con["codeSystem"]] || con["codeSystemName"]
-            Concept.new(code: con["code"], 
+            Concept.new(code: con["code"],
                         code_system_name: code_system_name,
                         code_system_version: con["codeSystemVersion"],
                         display_name: con["displayName"], code_system: con["codeSystem"])
