@@ -159,6 +159,8 @@ require_relative 'health-data-standards/import/cat1/insurance_provider_importer'
 require_relative 'health-data-standards/import/cat1/procedure_importer'
 require_relative 'health-data-standards/import/cat1/clinical_trial_participant_importer'
 
+require_relative 'health-data-standards/import/cat1/external/external_cat1_importer'
+
 require_relative 'health-data-standards/import/bundle/importer'
 
 require_relative 'health-data-standards/import/bulk_record_importer'

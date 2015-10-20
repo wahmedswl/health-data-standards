@@ -46,6 +46,7 @@ GEM
     erubis (2.7.0)
     factory_girl (4.1.0)
       activesupport (>= 3.0.0)
+    ffi (1.9.8)
     ffi (1.9.8-java)
     highline (1.7.2)
     http-cookie (1.0.2)
@@ -145,6 +146,7 @@ DEPENDENCIES
   awesome_print
   cane (~> 2.3.0)
   factory_girl (~> 4.1.0)
+  ffi
   health-data-standards!
   minitest (~> 5.3)
   minitest-reporters
