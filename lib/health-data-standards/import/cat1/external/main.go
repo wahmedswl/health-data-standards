@@ -20,6 +20,10 @@ var lastNameXPath = xpath.Compile("cda:name/cda:family")
 var firstNameXPath = xpath.Compile("cda:name/cda:given")
 var birthTimeXPath = xpath.Compile("cda:birthTime/@value")
 var genderXPath = xpath.Compile("cda:administrativeGenderCode/@code")
+var raceXPath = xpath.Compile("cda:raceCode/@code")
+var raceCodeSetXPath = xpath.Compile("cda:raceCode/@codeSystemName")
+var ethnicityXPath = xpath.Compile("cda:ethnicGroupCode/@code")
+var ethnicityCodeSetXPath = xpath.Compile("cda:ethnicGroupCode/@codeSystemName")
 var codeXPath = xpath.Compile("cda:code/@code")
 
 func main() {}
@@ -48,6 +52,18 @@ type Person struct {
 	Last      string `json:"last"`
 	Gender    string `json:"gender"`
 	Birthdate int64  `json:"birthdate"`
+	Race			Race   `json:"race"`
+	Ethnicity Ethnicity `json:"ethnicity"`
+}
+
+type Race struct {
+	Code string `json:"code"`
+	CodeSet string `json:"code_set"`
+}
+
+type Ethnicity struct {
+	Code string `json:"code"`
+	CodeSet string `json:"code_set"`
 }
 
 type Organization struct {
@@ -169,6 +185,10 @@ func read_patient(rawPath *C.char) string {
 	patient.Last = FirstElementContent(lastNameXPath, patientElement)
 	patient.Gender = FirstElementContent(genderXPath, patientElement)
 	patient.Birthdate = GetTimestamp(birthTimeXPath, patientElement)
+	patient.Race.Code = FirstElementContent(raceXPath, patientElement)
+	patient.Race.CodeSet = FirstElementContent(raceCodeSetXPath, patientElement)
+	patient.Ethnicity.Code = FirstElementContent(ethnicityXPath, patientElement)
+	patient.Ethnicity.CodeSet = FirstElementContent(ethnicityCodeSetXPath, patientElement)
 
 	patientJSON, err := json.Marshal(patient)
 	if err != nil {
