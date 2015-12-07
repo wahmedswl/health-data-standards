@@ -5,7 +5,7 @@ module HealthDataStandards
       field :oid, type: String
       field :display_name, type: String
       field :version, type: String
-      field :versioned_oid, type: String
+      field :bonnie_hash, type: String
 
       belongs_to :bundle, class_name: "HealthDataStandards::CQM::Bundle", inverse_of: :value_sets
 
@@ -33,6 +33,21 @@ module HealthDataStandards
         end
 
         codes
+      end
+
+      def self.gen_bonnie_hash(value_set)
+        if (!value_set.bonnie_hash.nil?)
+          return value_set.bonnie_hash
+        end
+        sorted_concepts = value_set.concepts.sort { |x,y| x.code <=> y.code }
+        id_string = value_set.oid
+        sorted_concepts.each do |concept|
+          id_string += "|#{concept.code_system_name}:#{concept.code}"  
+        end
+#        puts id_string
+        id_string
+#        hash = Digest::MD5.hexdigest id_string
+#        hash
       end
 
       def self.load_from_xml(doc)
