@@ -47,8 +47,12 @@ module HealthDataStandards
 		end
 
     class VSApiV2 < VSApi
-      def initialize(ticket_url, api_url, username, password)
+      attr_accessor :oid_to_versions, :version_url
+      
+      def initialize(ticket_url, api_url, version_url, username, password)
         super(ticket_url, api_url, username, password)
+        @oid_to_versions = Hash.new
+        @version_url = version_url
       end
 
       def get_valueset(oid, options = {}, &block)
@@ -65,7 +69,25 @@ module HealthDataStandards
 				yield oid,vs if block_given?
 				vs
 			end
+      
+      def get_versions(oid)
+        if (oid_to_versions[oid].nil?)
+          params = {ticket: get_ticket}
+          url = "#{version_url}/#{oid}/versions"
 
+          begin
+					  version_xml = RestClient.get url, {:params=>params}
+				  rescue RestClient::ResourceNotFound
+					  raise VSNotFoundError, "No ValueSet found for oid '#{oid}'"
+				  end
+				  yield oid,vs if block_given?
+          oid_to_versions[oid] = version_xml
+				  version_xml
+        else
+          oid_to_versions[oid]
+        end
+      end
+        
       def process_valuesets(oids, options = {}, &block)
         version = options.fetch(:version, nil)
         include_draft = options.fetch(:include_draft, false)
