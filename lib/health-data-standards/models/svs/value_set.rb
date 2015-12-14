@@ -41,13 +41,24 @@ module HealthDataStandards
         end
         sorted_concepts = value_set.concepts.sort { |x,y| x.code <=> y.code }
         id_string = value_set.oid
+        id_string += "|#{value_set.version}"
         sorted_concepts.each do |concept|
           id_string += "|#{concept.code_system_name}:#{concept.code}"  
         end
-#        puts id_string
         id_string
-#        hash = Digest::MD5.hexdigest id_string
-#        hash
+        hash = Digest::MD5.hexdigest id_string
+        hash
+      end
+      
+      def self.gen_versionless_hash(value_set)
+        sorted_concepts = value_set.concepts.sort { |x,y| x.code <=> y.code }
+        id_string = value_set.oid
+        sorted_concepts.each do |concept|
+          id_string += "|#{concept.code_system_name}:#{concept.code}"  
+        end
+        id_string
+        hash = Digest::MD5.hexdigest id_string
+        hash
       end
 
       def self.load_from_xml(doc)
