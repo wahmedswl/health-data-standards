@@ -41,9 +41,9 @@ module HealthDataStandards
         end
         sorted_concepts = value_set.concepts.sort { |x,y| x.code <=> y.code }
         id_string = value_set.oid
-        id_string += "|#{value_set.version}"
+        id_string << "|#{value_set.version}"
         sorted_concepts.each do |concept|
-          id_string += "|#{concept.code_system_name}:#{concept.code}"  
+          id_string << "|#{concept.code_system_name}:#{concept.code}"  
         end
         id_string
         hash = Digest::MD5.hexdigest id_string
@@ -54,7 +54,7 @@ module HealthDataStandards
         sorted_concepts = value_set.concepts.sort { |x,y| x.code <=> y.code }
         id_string = value_set.oid
         sorted_concepts.each do |concept|
-          id_string += "|#{concept.code_system_name}:#{concept.code}"  
+          id_string << "|#{concept.code_system_name}:#{concept.code}"  
         end
         id_string
         hash = Digest::MD5.hexdigest id_string
@@ -74,6 +74,7 @@ module HealthDataStandards
                         display_name: con["displayName"], code_system: con["codeSystem"])
           end
           vs.concepts = concepts
+          vs.bonnie_hash = ValueSet.gen_bonnie_hash(vs)
           return vs
         end
       end
