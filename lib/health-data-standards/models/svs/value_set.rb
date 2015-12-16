@@ -35,19 +35,12 @@ module HealthDataStandards
         codes
       end
 
-      def self.gen_bonnie_hash(value_set)
-        if (!value_set.bonnie_hash.nil?)
-          return value_set.bonnie_hash
-        end
-        sorted_concepts = value_set.concepts.sort { |x,y| x.code <=> y.code }
-        id_string = value_set.oid
-        id_string += "|#{value_set.version}"
-        sorted_concepts.each do |concept|
-          id_string += "|#{concept.code_system_name}:#{concept.code}"  
-        end
-        id_string
-        hash = Digest::MD5.hexdigest id_string
-        hash
+      def generate_bonnie_hash
+        return bonnie_hash if bonnie_hash
+        hash_values = concepts.map { |c| [c.code_system_name, c.code] }.sort.flatten
+        hash_values.unshift(oid)
+        hash_values.unshift(version)
+        self.bonnie_hash = Digest::MD5.hexdigest(hash_values.join('|'))
       end
       
       def self.gen_versionless_hash(value_set)
