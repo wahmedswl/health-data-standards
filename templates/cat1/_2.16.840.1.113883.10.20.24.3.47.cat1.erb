@@ -11,6 +11,7 @@
       <low <%= value_or_null_flavor(entry.start_time) %>/>
       <high <%= value_or_null_flavor(entry.end_time) %>/>
     </effectiveTime>
+    <!-- Also need a PIVL_TS (period) effective_time here -->
      <%== render(:partial => 'medication_details', :locals => {:entry => entry, :route_oids=>field_oids["ROUTE"]}) %>
     <consumable>
       <manufacturedProduct classCode="MANU">

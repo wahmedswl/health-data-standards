@@ -30,7 +30,7 @@ module HealthDataStandards
           medication.route = extract_code(entry_element, "./cda:routeCode")
           medication.dose = extract_scalar(entry_element, "./cda:doseQuantity")
           medication.anatomical_approach = extract_code(entry_element, "./cda:approachSiteCode", 'SNOMED-CT')
-          
+
           extract_dose_restriction(entry_element, medication)
 
           medication.product_form = extract_code(entry_element, "./cda:administrationUnitCode", 'NCI Thesaurus')
@@ -48,6 +48,14 @@ module HealthDataStandards
         end
 
         private
+
+        def extract_negation(parent_element, medication)
+          if parent_element.parent.name == "entryRelationship"
+            super(parent_element.parent.parent, medication)
+          else
+            super(parent_element, medication)
+          end
+        end
 
         def extract_fulfillment_history(parent_element, medication)
           fhs = parent_element.xpath("./cda:entryRelationship/cda:supply[@moodCode='EVN']")
