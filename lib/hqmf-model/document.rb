@@ -235,10 +235,47 @@ module HQMF
       end
     end
 
+    # Determine if a given criteria id is contained within a given population
+    # @param [String] the id of the criteria to check.
+    # @param [String] the id of the population to check (e.g. "STRAT_1")
+    # @return [Boolean] true if the criteria is contained in the population. false otherwise.
+    def is_criteria_in_population(criteria, population)
+      pop_precondition = self.population_criteria(population)
+      if (pop_precondition)
+        is_criteria_in_precondition(criteria, pop_precondition)
+      else
+        false
+      end
+    end
+
     private
     
     def find(collection, attribute, value)
       collection.find {|e| e.send(attribute)==value}
     end
+
+    def is_criteria_in_precondition(criteria, precondition)
+      if (!precondition.preconditions.blank?)
+        precondition.preconditions.any? {|precondition|
+          is_criteria_in_precondition(criteria, precondition)
+        }
+      elsif (precondition.reference)
+        precondition.reference.id == criteria || is_criteria_in_criteria(criteria, precondition.reference.id);
+      else
+        false
+      end
+    end
+
+    def is_criteria_in_criteria(criteria, parent_criteria_id)
+      parent_criteria = self.data_criteria(parent_criteria_id)
+      if (parent_criteria && parent_criteria.children_criteria)
+        parent_criteria.children_criteria.any? {|child_criteria|
+          child_criteria == criteria || is_criteria_in_criteria(criteria, child_criteria)
+        }
+      else
+        false
+      end
+    end
+
   end
 end
