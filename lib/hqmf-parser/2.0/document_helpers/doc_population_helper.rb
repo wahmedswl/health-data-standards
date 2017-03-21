@@ -66,6 +66,7 @@ module HQMF2
       # look for observation data in separate section but create a population for it if it exists
       observation_section = @doc.xpath('/cda:QualityMeasureDocument/cda:component/cda:measureObservationSection',
                                        HQMF2::Document::NAMESPACES)
+      debugger
       unless observation_section.empty?
         observation_section.xpath('cda:definition', HQMF2::Document::NAMESPACES).each do |criteria_def|
           criteria_id = 'OBSERV'
