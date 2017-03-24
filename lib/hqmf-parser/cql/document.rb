@@ -13,6 +13,7 @@ module HQMF2CQL
 
       # Extract the population criteria and population collections
       pop_helper = HQMF2CQL::DocumentPopulationHelper.new(@entry, @doc, self, @id_generator, @reference_ids)
+      debugger
       @populations_cql_map, @observations = pop_helper.extract_populations
     end
 
@@ -24,7 +25,7 @@ module HQMF2CQL
       HQMF::Document.new(@id, @id, @hqmf_set_id, @hqmf_version_number, @cms_id,
                          title, description, [], dcs, sdc,
                          @attributes, @measure_period, @populations,
-                         populations_cql_map=@populations_cql_map)
+                         populations_cql_map=@populations_cql_map, observations=@observations)
     end
 
     # Extracts data criteria from the HQMF document.

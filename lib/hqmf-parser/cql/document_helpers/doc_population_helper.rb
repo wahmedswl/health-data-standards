@@ -27,15 +27,10 @@ module HQMF2CQL
                                        HQMF2::Document::NAMESPACES)
       debugger
       unless observation_section.empty?
-        
-        #TODO: get name of cql observation thing
-        
-        
-        
-        observations << "EDStayTime"
-        
+        observation_section.each do |entry|
+          observations << entry.at_xpath("*/cda:measureObservationDefinition/cda:value/cda:expression").values.first.match('\"([A-Za-z0-9]+)\"')[1]
+        end
       end
-
       observations
     end
 
