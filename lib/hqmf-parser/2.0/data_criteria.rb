@@ -268,16 +268,11 @@ module HQMF2
 
     # Generate the title and description used when producing the model
     def retrieve_title_and_description_for_model
-      # drop "* Value Set" from titles
-      exact_desc = title.split(' ')[0...-3].join(' ')
-      # don't drop anything for patient characterstic titles
-      exact_desc = title if @definition.start_with?('patient_characteristic') && !title.end_with?('Value Set')
-
       # remove * Value Set from title
       title_match = title.match(/(.*) \w+ [Vv]alue [Ss]et/)
       @title = title_match[1] if title_match && title_match.length > 1
 
-      @description = "#{@description}: #{exact_desc}"
+      @description = "#{@description}: #{title}"
     end
   end
 
