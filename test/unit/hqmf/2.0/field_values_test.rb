@@ -29,10 +29,12 @@ class FieldValuesTest < Minitest::Test
     assert_field_value("DeviceIntoleranceReaction","REACTION")
   end
 
+  # TODO: change this test to assert this field was removed
   def test_radiation_dose
     assert_field_value("DiagnosticStudyAERadiationDose","RADIATION_DOSAGE")
   end
 
+  # TODO: change this test to assert this field was removed
   def test_radiation_duration
     assert_field_value("DiagnosticStudyAERadiationDuration","RADIATION_DURATION")
   end
