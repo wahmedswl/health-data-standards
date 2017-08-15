@@ -9,7 +9,7 @@ class Entry
   embedded_in :record
   embeds_one :cda_identifier, class_name: "CDAIdentifier", as: :cda_identifiable
   embeds_many :values, class_name: "ResultValue"
-  embeds_many :references
+  embeds_many :references # TODO(BONNIE-965): use this to stand in for new "Related To", which replaces "fulfills"
   embeds_many :provider_preference, class_name: "Entry"
   embeds_many :patient_preference, class_name: "Entry"
   

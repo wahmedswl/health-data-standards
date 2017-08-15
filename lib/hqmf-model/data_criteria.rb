@@ -89,6 +89,8 @@ module HQMF
               # MISSING Time - The time that the patient passed away
 
               # Custom field values
+              # TODO(BONNIE-965): Change title to "Related to", keep FLFS code, add comment to describe cange
+              # need reference to look like a code element according to cql_qdm_patientapi
               'FLFS' => {title:'Fulfills', coded_entry_method: :fulfills, code: 'FLFS', field_type: :reference},
               'SOURCE' => {title:'Source', coded_entry_method: :source, code: '260753009', code_system:'2.16.840.1.113883.6.96', template_id: '2.16.840.1.113883.3.560.1.2001.2', field_type: :value},
               'TRANSFER_FROM' => {title:'Transfer From', coded_entry_method: :transfer_from, code: 'TRANSFER_FROM', template_id: '2.16.840.1.113883.10.20.24.3.81', field_type: :value},
@@ -447,6 +449,14 @@ module HQMF
           value = HQMF::Component.from_json(json)
         when 'COL'
           value = HQMF::Collection.from_json(json)
+<<<<<<< Updated upstream
+=======
+        when 'FAC'
+          binding.pry
+          # TODO: just just Facility()? how to get json?
+          # value = HQMF::Facility.from_json(json)
+          value = Facility.from_json(json)
+>>>>>>> Stashed changes
         else
           raise "Unknown value type [#{type}]"
         end
