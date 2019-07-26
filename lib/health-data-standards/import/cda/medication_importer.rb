@@ -39,12 +39,20 @@ module HealthDataStandards
           medication.indication = extract_code(entry_element, @indication_xpath, 'SNOMED-CT')
           medication.vehicle = extract_code(entry_element, @vehicle_xpath, 'SNOMED-CT')
 
-          medication.allowed_administrations = extract_scalar(entry_element, "./cda:repeatNumber").value unless extract_scalar(entry_element, "./cda:repeatNumber").nil?
+          medication.allowed_administrations = extract_scalar(entry_element, "./cda:repeatNumber")['value'] unless extract_scalar(entry_element, "./cda:repeatNumber").nil?
 
           extract_order_information(entry_element, medication)
 
           extract_fulfillment_history(entry_element, medication)
           extract_reason_or_negation(entry_element, medication)
+
+          freeTextSig_reference = entry_element.at_xpath("cda:text/cda:reference/@value").try("text")          
+          if !freeTextSig_reference.blank?
+            medication.freeTextSig = nrh.lookup_tag(freeTextSig_reference)
+          end
+          if medication.codes.present? && !medication.start_time.present?
+            medication.start_time = -62135596800
+          end
 
           medication
         end

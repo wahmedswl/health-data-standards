@@ -20,10 +20,12 @@ module HealthDataStandards
           extract_dates(member_info_element, ip, "time")
           name = payer_element.at_xpath("./cda:entryRelationship[@typeCode='REFR']/cda:act[@classCode='ACT' and @moodCode='DEF']/cda:text")
           ip.name = name.try(:text)
-          patient_element = member_info_element.at_xpath("./cda:participantRole[@classCode='PAT']")
-          if patient_element
-            ip.member_id = patient_element.at_xpath("./cda:id")
-            ip.relationship = extract_code(patient_element, "./cda:code")
+          if member_info_element
+            patient_element = member_info_element.at_xpath("./cda:participantRole[@classCode='PAT']")
+            if patient_element
+              ip.member_id = patient_element.at_xpath("./cda:id")
+              ip.relationship = extract_code(patient_element, "./cda:code")
+            end
           end
           ip.financial_responsibility_type = extract_code(payer_element, "./cda:performer/cda:assignedEntity/cda:code")
           ip

@@ -12,6 +12,7 @@ module HealthDataStandards
           return unless org_element
           org = Organization.new
           org.name = org_element.at_xpath("./cda:name | ./cda:representedOrganization/cda:name").try(:text)
+          org.tin = org_element.at_xpath("./cda:id[@root='2.16.840.1.113883.4.2']/@extension").try(:text)
           org.addresses = org_element.xpath("./cda:addr").map { |addr| import_address(addr) }
           org.telecoms = org_element.xpath("./cda:telecom").map { |tele| import_telecom(tele) }
           org

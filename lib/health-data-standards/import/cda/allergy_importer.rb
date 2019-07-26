@@ -21,6 +21,20 @@ module HealthDataStandards
           allergy.reaction = extract_code(entry_element, @reaction_xpath)
           allergy.severity = extract_code(entry_element, @severity_xpath)
 
+          description_reference = entry_element.at_xpath(@reaction_xpath + "/cda:originalText/cda:reference/@value").try("text")
+          if !description_reference.blank?
+            allergy.reaction[:description] = nrh.lookup_tag(description_reference)
+          end
+          if !allergy.description? && !entry_element.search("playingEntity/code").blank?
+            allergy.description = entry_element.search("playingEntity/code").attr("displayName").try("text")
+          end
+          if !allergy.type? || allergy.type["code"] == "ASSERTION"
+            allergy.type = extract_code(entry_element, "./cda:value")
+          end          
+          if !allergy.start_time?
+            extract_dates(entry_element.parent.parent, allergy)
+          end
+
           allergy
         end
         

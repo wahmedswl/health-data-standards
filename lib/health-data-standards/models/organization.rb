@@ -3,6 +3,7 @@ class Organization
   include Mongoid::Attributes::Dynamic
   
   field :name, type: String
+  field :tin, type: String
   
   embeds_many :addresses, as: :locatable
   embeds_many :telecoms, as: :contactable

@@ -154,6 +154,9 @@ module HealthDataStandards
           patient.addresses = patient_role_element.xpath("./cda:addr").map { |addr| import_address(addr) }
           patient.telecoms = patient_role_element.xpath("./cda:telecom").map { |tele| import_telecom(tele) }
           
+          id_node = patient_element.at_xpath('cda:id')
+          patient['id_root'] = id_node['root'] if id_node
+          
         end
       end
     end

@@ -86,6 +86,7 @@ module HealthDataStandards
         end
 
         def extract_reason_description(parent_element, entry, nrh)
+          return unless parent_element
           code_elements = parent_element.xpath(@description_xpath)
           code_elements.each do |code_element|
             tag = code_element['value']
@@ -94,6 +95,7 @@ module HealthDataStandards
         end
 
         def extract_codes(parent_element, entry)
+          return unless parent_element
           code_elements = parent_element.xpath(@code_xpath)
           code_elements.each do |code_element|
             add_code_if_present(code_element, entry)
@@ -111,6 +113,7 @@ module HealthDataStandards
         end
 
         def extract_dates(parent_element, entry, element_name="effectiveTime")
+          return unless parent_element
           if parent_element.at_xpath("cda:#{element_name}/@value")
             entry[:time] = HL7Helper.timestamp_to_integer(parent_element.at_xpath("cda:#{element_name}")['value'])
           end
@@ -126,6 +129,7 @@ module HealthDataStandards
         end
 
         def extract_values(parent_element, entry)
+          return unless parent_element
           parent_element.xpath(@value_xpath).each do |elem|
             extract_value(parent_element, elem, entry)
           end
@@ -200,10 +204,13 @@ module HealthDataStandards
           code_elements.each do |code_element|
             if code_element['nullFlavor'] == 'NA' && code_element['sdtc:valueSet']
               # choose code from valueset
-              valueset = HealthDataStandards::SVS::ValueSet.where(oid: code_element['sdtc:valueSet'], bundle_id: get_bundle_id(coded_parent_element))
-              entry.add_code(valueset.first.concepts.first['code'], valueset.first.concepts.first['code_system_name'])
-              # A "code" is added to indicate the Non-Applicable valueset.
-              entry.add_code(code_element['sdtc:valueSet'], 'NA_VALUESET')
+              begin
+                valueset = HealthDataStandards::SVS::ValueSet.where(oid: code_element['sdtc:valueSet'], bundle_id: get_bundle_id(coded_parent_element))
+                entry.add_code(valueset.first.concepts.first['code'], valueset.first.concepts.first['code_system_name'])
+                # A "code" is added to indicate the Non-Applicable valueset.
+                entry.add_code(code_element['sdtc:valueSet'], 'NA_VALUESET')
+              rescue => exception
+              end
             end
           end
         end
