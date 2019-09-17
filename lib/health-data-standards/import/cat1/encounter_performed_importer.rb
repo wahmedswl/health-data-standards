@@ -27,7 +27,7 @@ module HealthDataStandards
             extract_workaround_codes(diagnosis_element, diagnosis)
             diagnosis.codes[diagnosis['code_system']] ||= []
             diagnosis.codes[diagnosis['code_system']] << diagnosis['code']
-            return diagnosis
+            return diagnosis.as_json()
           end
           nil
         end
