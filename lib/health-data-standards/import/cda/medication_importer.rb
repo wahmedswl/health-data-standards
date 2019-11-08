@@ -51,7 +51,11 @@ module HealthDataStandards
             medication.freeTextSig = nrh.lookup_tag(freeTextSig_reference)
           end
           if medication.codes.present? && !medication.start_time.present?
-            medication.start_time = -62135596800
+            if medication.time.present?
+              medication.start_time = medication.time
+            else
+              medication.start_time = -62135596800
+            end
           end
 
           medication
