@@ -114,17 +114,27 @@ module HealthDataStandards
 
         def extract_dates(parent_element, entry, element_name="effectiveTime")
           return unless parent_element
+
+          has_time = false
           if parent_element.at_xpath("cda:#{element_name}/@value")
             entry[:time] = HL7Helper.timestamp_to_integer(parent_element.at_xpath("cda:#{element_name}")['value'])
+            has_time = true
           end
           if parent_element.at_xpath("cda:#{element_name}/cda:low")
             entry[:start_time] = HL7Helper.timestamp_to_integer(parent_element.at_xpath("cda:#{element_name}/cda:low")['value'])
+            has_time = true
           end
           if parent_element.at_xpath("cda:#{element_name}/cda:high")
             entry[:end_time] = HL7Helper.timestamp_to_integer(parent_element.at_xpath("cda:#{element_name}/cda:high")['value'])
+            has_time = true
           end
           if parent_element.at_xpath("cda:#{element_name}/cda:center")
             entry[:time] = HL7Helper.timestamp_to_integer(parent_element.at_xpath("cda:#{element_name}/cda:center")['value'])
+            has_time = true
+          end
+
+          if !has_time && parent_element.at_xpath("cda:author/cda:time")
+            entry[:time] = HL7Helper.timestamp_to_integer(parent_element.at_xpath("cda:author/cda:time")['value'])
           end
         end
 
