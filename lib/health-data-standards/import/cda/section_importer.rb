@@ -140,8 +140,17 @@ module HealthDataStandards
 
         def extract_values(parent_element, entry)
           return unless parent_element
+
+          has_value = false
           parent_element.xpath(@value_xpath).each do |elem|
             extract_value(parent_element, elem, entry)
+            has_value = true
+          end
+
+          if !has_value
+            parent_element.xpath("cda:entryRelationship/cda:observation/" + @value_xpath).each do |elem|
+              extract_value(parent_element, elem, entry)
+            end
           end
         end
 
