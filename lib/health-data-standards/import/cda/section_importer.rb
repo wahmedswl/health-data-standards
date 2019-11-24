@@ -96,12 +96,26 @@ module HealthDataStandards
 
         def extract_codes(parent_element, entry)
           return unless parent_element
+
+          has_code = false
           code_elements = parent_element.xpath(@code_xpath)
           code_elements.each do |code_element|
             add_code_if_present(code_element, entry)
+            has_code = true
             translations = code_element.xpath('cda:translation')
             translations.each do |translation|
               add_code_if_present(translation, entry)
+            end
+          end
+
+          if !has_code
+            code_elements = parent_element.xpath("cda:entryRelationship/cda:observation/" + @code_xpath)
+            code_elements.each do |code_element|
+              add_code_if_present(code_element, entry)
+              translations = code_element.xpath('cda:translation')
+              translations.each do |translation|
+                add_code_if_present(translation, entry)
+              end
             end
           end
         end
