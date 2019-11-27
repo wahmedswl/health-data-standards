@@ -107,7 +107,7 @@ module HealthDataStandards
           end
 
           if !entry[:codes].present?
-            code_elements = parent_element.xpath("cda:entryRelationship/cda:observation/" + @code_xpath)
+            code_elements = parent_element.xpath("cda:entryRelationship/cda:observation/./cda:code")
             code_elements.each do |code_element|
               add_code_if_present(code_element, entry)
               translations = code_element.xpath('cda:translation')
@@ -160,7 +160,7 @@ module HealthDataStandards
           end
 
           if !has_value
-            parent_element.xpath("cda:entryRelationship/cda:observation/" + @value_xpath).each do |elem|
+            parent_element.xpath("cda:entryRelationship/cda:observation/cda:value").each do |elem|
               extract_value(parent_element, elem, entry)
             end
           end
