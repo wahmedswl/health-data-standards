@@ -4,7 +4,7 @@ module HealthDataStandards
       class InsuranceProviderImporter < C32::InsuranceProviderImporter
         
         def initialize
-          super(CDA::EntryFinder.new("//cda:act[cda:templateId/@root='2.16.840.1.113883.10.20.22.4.61']"))
+          super(CDA::EntryFinder.new("//cda:act[cda:templateId/@root='2.16.840.1.113883.10.20.22.4.61' or cda:templateId/@root='2.16.840.1.113883.10.20.1.26']"))
         end
         
       end
