@@ -20,9 +20,11 @@ module HealthDataStandards
           member_info_element = payer_element.at_xpath("cda:participant[@typeCode='COV']")
           extract_dates(member_info_element, ip, "time")
           covered_party_element = payer_element.at_xpath("./cda:entryRelationship[@typeCode='REFR']/cda:act[@classCode='ACT' and @moodCode='DEF']")
-          ip[:covered_party_id] = covered_party_element.at_xpath("./cda:id")['extension'] if covered_party_element.at_xpath("./cda:id")
-          name = covered_party_element.at_xpath("./cda:text")
-          ip.name = name.try(:text)
+          if covered_party_element
+            ip[:covered_party_id] = covered_party_element.at_xpath("./cda:id")['extension'] if covered_party_element.at_xpath("./cda:id")
+            name = covered_party_element.at_xpath("./cda:text")
+            ip.name = name.try(:text)            
+          end
           if member_info_element
             patient_element = member_info_element.at_xpath("./cda:participantRole[@classCode='PAT']")
             if patient_element
